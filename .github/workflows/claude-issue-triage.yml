@@ -59,4 +59,6 @@ jobs:
 
                Antes de comentar, busca si ya existe un comentario con el marcador `<!-- claude-issue-diagnosis -->` (por ejemplo con `gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments`). Si existe, actualízalo con `gh api --method PATCH repos/${{ github.repository }}/issues/comments/<id> -f body=...` en lugar de crear otro. Si no existe, créalo con `gh issue comment`.
 
+            Formato: todo lo que comentes en el issue (el diagnóstico y cualquier otro comentario) debe estar escrito en Markdown válido para GitHub (GFM): usa encabezados (`##`/`###`), listas con `-` o numeradas, **negritas**, `código en línea`, bloques de código con triple acento grave y lenguaje (```js), y enlaces a archivos/líneas con formato Markdown cuando aplique. No uses HTML salvo el marcador oculto inicial. Al pasar el cuerpo por `gh`, asegúrate de que los saltos de línea se conserven para que GitHub renderice bien el Markdown.
+
             Si no tienes certeza sobre la causa, dilo explícitamente en el diagnóstico en lugar de inventar.
