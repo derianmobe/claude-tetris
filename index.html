@@ -7,7 +7,10 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <button id="theme-toggle" type="button" aria-label="Cambiar tema" aria-pressed="false">☀ Claro</button>
+  <div class="toolbar">
+    <button id="mute-toggle" type="button" aria-label="Silenciar sonido" aria-pressed="false">🔊</button>
+    <button id="theme-toggle" type="button" aria-label="Cambiar tema" aria-pressed="false">☀ Claro</button>
+  </div>
   <h1 class="game-title">TETRIS</h1>
   <div class="wrapper">
     <div class="game-container">
@@ -26,11 +29,24 @@
           <span class="label">LEVEL</span>
           <span class="value" id="level">1</span>
         </div>
+        <div class="panel-section">
+          <span class="label">COMBO</span>
+          <span class="value" id="combo">-</span>
+        </div>
 
         <div class="panel-section">
           <span class="label">NEXT</span>
           <canvas id="next-canvas" width="120" height="120"></canvas>
         </div>
+
+        <div class="panel-section hidden" id="objective-section">
+          <span class="label">OBJETIVO</span>
+          <span class="objective-text" id="objective"></span>
+          <span class="value value-sm" id="timer"></span>
+          <span class="objective-text" id="progress"></span>
+        </div>
+
+        <div class="panel-section status" id="status" aria-live="polite"></div>
 
         <div class="panel-section controls">
           <span class="label">CONTROLS</span>
@@ -49,7 +65,20 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
-        <button id="restart-btn">Reiniciar</button>
+        <button id="next-btn" class="btn hidden" type="button">Siguiente nivel</button>
+        <button id="restart-btn" class="btn" type="button">Reiniciar</button>
+        <button id="menu-btn" class="btn btn-secondary" type="button">Menú</button>
+      </div>
+    </div>
+
+    <div id="menu" class="overlay hidden">
+      <div class="overlay-box">
+        <p class="menu-title">TETRIS</p>
+        <div id="menu-main" class="menu-group">
+          <button id="menu-classic" class="btn" type="button">Clásico</button>
+          <button id="menu-challenge" class="btn" type="button">Desafío</button>
+        </div>
+        <div id="challenge-list" class="menu-group hidden"></div>
       </div>
     </div>
   </div>
