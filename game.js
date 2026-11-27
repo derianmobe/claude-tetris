@@ -87,11 +87,20 @@ const startLevelDec = document.getElementById('start-level-dec');
 const startLevelInc = document.getElementById('start-level-inc');
 const themeToggle = document.getElementById('theme-toggle');
 const muteToggle = document.getElementById('mute-toggle');
+const recordEntry = document.getElementById('record-entry');
+const recordMsg = document.getElementById('record-msg');
+const recordName = document.getElementById('record-name');
+const overlayRecords = document.getElementById('overlay-records');
+const menuRecords = document.getElementById('menu-records');
+const resetRecordsBtn = document.getElementById('reset-records-btn');
+
+const RECORDS_KEY = 'records';
+const MAX_RECORDS = 5;
 
 let gridColor = '#22222e';
 
 let board, hidden, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
-let baseLevel, combo, b2b, lastMoveWasRotate, pendingPower, freezeMs, effects, challenge, mode, challengeIdx;
+let baseLevel, combo, maxCombo, b2b, lastMoveWasRotate, pendingPower, freezeMs, effects, challenge, mode, challengeIdx;
 let muted = false;
 const MIN_START_LEVEL = 1, MAX_START_LEVEL = 15;
 let startLevel = MIN_START_LEVEL; // nivel inicial elegido en el menú de pausa (modo clásico)
@@ -280,6 +289,7 @@ function applyPower(piece) {
 // ---- Puntuación, combo y niveles ----
 function applyScore(cleared, tspin, perfect, rows) {
   if (cleared) combo++; else combo = -1;
+  maxCombo = Math.max(maxCombo, combo + 1); // racha de bloqueos seguidos que limpian
 
   if (cleared) {
     for (const r of rows) burst(COLS * BLOCK / 2, r * BLOCK + BLOCK / 2, '#ffffff', 10, COLS * BLOCK);
@@ -646,6 +656,8 @@ function showOverlay(title, sub, win, showNext) {
   overlayTitle.textContent = title;
   overlayTitle.classList.toggle('win', !!win);
   overlayScore.textContent = sub;
+  recordEntry.classList.add('hidden');
+  overlayRecords.classList.add('hidden');
   nextBtn.classList.toggle('hidden', !showNext);
   restartBtn.textContent = challenge ? 'Reintentar' : 'Reiniciar';
   overlay.classList.remove('hidden');
@@ -662,9 +674,142 @@ function finish(won, title) {
     won,
     hasNext
   );
+  if (!challenge) showRecordResult(submitRecord());
   if (won) sfx.win(); else sfx.lose();
   draw();
 }
+
+// ---- Récords (solo modo clásico) ----
+function loadRecords() {
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem(RECORDS_KEY)); } catch (e) {}
+  const top = data && Array.isArray(data.top) ? data.top.filter(r => r && typeof r.score === 'number') : [];
+  return {
+    top: top.slice(0, MAX_RECORDS),
+    bestCombo: (data && data.bestCombo) || 0,
+    maxLines: (data && data.maxLines) || 0,
+  };
+}
+
+function saveRecords(data) {
+  try { localStorage.setItem(RECORDS_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function lastPlayerName() {
+  try { return localStorage.getItem('playerName') || 'Jugador'; } catch (e) { return 'Jugador'; }
+}
+
+// Guarda la partida actual. Devuelve la posición en el top (-1 si no entra) y qué marcas se batieron.
+function submitRecord() {
+  const data = loadRecords();
+  const result = { rank: -1, newCombo: false, newLines: false };
+  if (maxCombo > data.bestCombo) { data.bestCombo = maxCombo; result.newCombo = maxCombo >= 2; }
+  if (lines > data.maxLines) { data.maxLines = lines; result.newLines = true; }
+  if (score > 0) {
+    let rank = data.top.findIndex(r => score > r.score);
+    if (rank === -1 && data.top.length < MAX_RECORDS) rank = data.top.length;
+    if (rank !== -1) {
+      const entry = { name: lastPlayerName(), score, lines, level, combo: maxCombo, date: Date.now(), id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
+      data.top.splice(rank, 0, entry);
+      data.top.length = Math.min(data.top.length, MAX_RECORDS);
+      result.rank = rank;
+      result.id = entry.id;
+    }
+  }
+  saveRecords(data);
+  return result;
+}
+
+let lastRecordResult = { rank: -1 };
+
+function showRecordResult(result) {
+  lastRecordResult = result;
+  if (result.rank !== -1) {
+    recordMsg.textContent = result.rank === 0 ? '¡NUEVO RÉCORD!' : `¡Entras en el top ${MAX_RECORDS}! (#${result.rank + 1})`;
+    recordName.value = lastPlayerName();
+    recordName.dataset.id = result.id;
+    recordEntry.classList.remove('hidden');
+    recordName.focus();
+    recordName.select();
+  }
+  renderRecords(overlayRecords, result);
+  overlayRecords.classList.remove('hidden');
+}
+
+// El nombre se edita en vivo sobre la entrada ya guardada (identificada por su id).
+function renameRecord(name) {
+  const data = loadRecords();
+  const entry = data.top.find(r => r.id === recordName.dataset.id);
+  if (!entry) return;
+  entry.name = name;
+  saveRecords(data);
+  try { localStorage.setItem('playerName', name); } catch (e) {}
+  renderRecords(overlayRecords, { ...lastRecordResult, rank: data.top.indexOf(entry) });
+}
+
+function renderRecords(container, highlight) {
+  const data = loadRecords();
+  const hl = highlight || { rank: -1 };
+  container.replaceChildren();
+
+  const title = document.createElement('span');
+  title.className = 'records-title';
+  title.textContent = 'RÉCORDS';
+  container.appendChild(title);
+
+  if (!data.top.length) {
+    const empty = document.createElement('span');
+    empty.className = 'records-empty';
+    empty.textContent = 'Sin récords todavía';
+    container.appendChild(empty);
+  } else {
+    const table = document.createElement('table');
+    table.className = 'records-table';
+    data.top.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      if (i === hl.rank) tr.className = 'highlight';
+      const cells = [
+        ['rank', `${i + 1}.`],
+        ['', r.name || 'Jugador'],
+        ['num', r.score.toLocaleString()],
+      ];
+      for (const [cls, text] of cells) {
+        const td = document.createElement('td');
+        if (cls) td.className = cls;
+        td.textContent = text; // textContent: el nombre es entrada del usuario
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    });
+    container.appendChild(table);
+  }
+
+  const stats = document.createElement('span');
+  stats.className = 'records-stats';
+  const stat = (label, value, isNew) => {
+    const b = document.createElement('strong');
+    b.textContent = value + (isNew ? ' ★' : '');
+    if (isNew) b.classList.add('new');
+    stats.append(label, b);
+  };
+  stat('Mejor combo: ', data.bestCombo >= 2 ? `x${data.bestCombo}` : '-', hl.newCombo);
+  stat(' · Máx. líneas: ', String(data.maxLines), hl.newLines);
+  container.appendChild(stats);
+}
+
+recordName.addEventListener('input', () => {
+  renameRecord(recordName.value.trim().slice(0, 12) || 'Jugador');
+});
+recordName.addEventListener('keydown', e => {
+  e.stopPropagation(); // no mover piezas / pausar mientras se escribe
+  if (e.key === 'Enter') recordName.blur();
+});
+
+resetRecordsBtn.addEventListener('click', () => {
+  if (!confirm('¿Borrar todos los récords?')) return;
+  try { localStorage.removeItem(RECORDS_KEY); } catch (e) {}
+  renderRecords(menuRecords);
+});
 
 function endGame() {
   finish(false);
@@ -750,6 +895,7 @@ function init(modeName, idx) {
   lines = 0;
   level = baseLevel;
   combo = -1;
+  maxCombo = 0;
   b2b = false;
   lastMoveWasRotate = false;
   pendingPower = false;
@@ -782,6 +928,7 @@ function showMenu() {
   pauseMenu.classList.add('hidden');
   challengeList.classList.add('hidden');
   menuMain.classList.remove('hidden');
+  renderRecords(menuRecords);
   menu.classList.remove('hidden');
 }
 

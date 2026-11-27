@@ -369,3 +369,103 @@ kbd {
 #theme-toggle:hover {
   border-color: var(--accent);
 }
+
+/* ---- Récords ---- */
+.records {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  font-size: 12px;
+}
+
+.records-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--label);
+  font-weight: 600;
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.records-table td {
+  padding: 3px 6px;
+  text-align: left;
+}
+
+.records-table td.num {
+  text-align: right;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.records-table td.rank {
+  color: var(--muted);
+  width: 1.5em;
+}
+
+.records-table tr.highlight td {
+  background: var(--accent-glow);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.records-empty,
+.records-stats {
+  color: var(--muted);
+}
+
+.records-stats strong {
+  color: var(--accent);
+}
+
+.records-stats strong.new {
+  color: var(--danger);
+}
+
+.record-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.record-msg {
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
+.record-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--label);
+  font-weight: 600;
+}
+
+.record-name {
+  background: var(--board-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  text-align: center;
+  width: 180px;
+  user-select: text;
+}
+
+.record-name:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
