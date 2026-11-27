@@ -38,6 +38,30 @@
   --grid: #e3e5ee;
 }
 
+/* ---- Skins: solo afectan a los canvas (fondo y cuadrícula) ---- */
+/* Van después de los temas para ganar con igual especificidad. */
+[data-skin="neon"] {
+  --grid: #0d1a26;
+}
+
+[data-skin="neon"] #board,
+[data-skin="neon"] #next-canvas {
+  background: #000;
+  border-color: #1b3a52;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.25);
+}
+
+[data-skin="pastel"] #board,
+[data-skin="pastel"] #next-canvas {
+  border-radius: 12px;
+}
+
+[data-skin="pixel"] #board,
+[data-skin="pixel"] #next-canvas {
+  border-radius: 0;
+  image-rendering: pixelated;
+}
+
 /* Transición suave al cambiar de tema (la clase la pone setTheme() solo durante el cambio) */
 html.theme-anim,
 html.theme-anim *,
@@ -301,6 +325,7 @@ kbd {
   gap: 8px;
 }
 
+#skin-select,
 #mute-toggle,
 #theme-toggle {
   background: var(--board-bg);
@@ -313,6 +338,7 @@ kbd {
   cursor: pointer;
 }
 
+#skin-select:hover,
 #mute-toggle:hover,
 #theme-toggle:hover {
   border-color: var(--accent);
