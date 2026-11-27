@@ -38,6 +38,16 @@
   --grid: #e3e5ee;
 }
 
+/* Skin neón: tablero y preview negros en ambos temas (html[...] gana a [data-theme]) */
+html[data-skin="neon"] {
+  --grid: #10101c;
+}
+
+html[data-skin="neon"] #board,
+html[data-skin="neon"] #next-canvas {
+  background: #000000;
+}
+
 /* Transición suave al cambiar de tema (la clase la pone setTheme() solo durante el cambio) */
 html.theme-anim,
 html.theme-anim *,
@@ -302,7 +312,8 @@ kbd {
 }
 
 #mute-toggle,
-#theme-toggle {
+#theme-toggle,
+#skin-select {
   background: var(--board-bg);
   color: var(--text);
   border: 1px solid var(--border);
@@ -314,7 +325,8 @@ kbd {
 }
 
 #mute-toggle:hover,
-#theme-toggle:hover {
+#theme-toggle:hover,
+#skin-select:hover {
   border-color: var(--accent);
 }
 
