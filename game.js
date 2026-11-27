@@ -78,6 +78,13 @@ const menuBtn = document.getElementById('menu-btn');
 const menu = document.getElementById('menu');
 const menuMain = document.getElementById('menu-main');
 const challengeList = document.getElementById('challenge-list');
+const pauseMenu = document.getElementById('pause-menu');
+const pauseMain = document.getElementById('pause-main');
+const pauseControls = document.getElementById('pause-controls');
+const pauseResumeBtn = document.getElementById('pause-resume');
+const startLevelValue = document.getElementById('start-level-value');
+const startLevelDec = document.getElementById('start-level-dec');
+const startLevelInc = document.getElementById('start-level-inc');
 const themeToggle = document.getElementById('theme-toggle');
 const muteToggle = document.getElementById('mute-toggle');
 
@@ -86,6 +93,10 @@ let gridColor = '#22222e';
 let board, hidden, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let baseLevel, combo, b2b, lastMoveWasRotate, pendingPower, freezeMs, effects, challenge, mode, challengeIdx;
 let muted = false;
+const MIN_START_LEVEL = 1, MAX_START_LEVEL = 15;
+let startLevel = MIN_START_LEVEL; // nivel inicial elegido en el menú de pausa (modo clásico)
+const heldKeys = new Set();     // teclas actualmente presionadas
+const blockedKeys = new Set();  // teclas mantenidas al reanudar: se ignoran hasta soltarlas
 let audioCtx = null;
 
 function createBoard() {
@@ -659,17 +670,42 @@ function endGame() {
   finish(false);
 }
 
+function pauseGame() {
+  if (gameOver || paused) return;
+  paused = true;
+  cancelAnimationFrame(animId);
+  showPauseView(false);
+  pauseMenu.classList.remove('hidden');
+  pauseResumeBtn.focus();
+}
+
+function resumeGame() {
+  if (gameOver || !paused) return;
+  paused = false;
+  pauseMenu.classList.add('hidden');
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  // Las teclas que siguen presionadas al volver no deben mover la pieza hasta soltarlas.
+  heldKeys.forEach(k => blockedKeys.add(k));
+  dropAccum = 0;
+  lastTime = performance.now();
+  animId = requestAnimationFrame(loop);
+}
+
 function togglePause() {
-  if (gameOver) return;
-  paused = !paused;
-  if (!paused) {
-    overlay.classList.add('hidden');
-    lastTime = performance.now();
-    loop(lastTime);
-  } else {
-    cancelAnimationFrame(animId);
-    showOverlay('PAUSA', '', false, false);
-  }
+  if (paused) resumeGame(); else pauseGame();
+}
+
+function showPauseView(controls) {
+  pauseMain.classList.toggle('hidden', controls);
+  pauseControls.classList.toggle('hidden', !controls);
+}
+
+function setStartLevel(value) {
+  startLevel = Math.min(MAX_START_LEVEL, Math.max(MIN_START_LEVEL, value | 0));
+  startLevelValue.textContent = startLevel;
+  startLevelDec.disabled = startLevel <= MIN_START_LEVEL;
+  startLevelInc.disabled = startLevel >= MAX_START_LEVEL;
+  try { localStorage.setItem('startLevel', String(startLevel)); } catch (e) {}
 }
 
 function loop(ts) {
@@ -706,7 +742,7 @@ function init(modeName, idx) {
   challengeIdx = idx || 0;
   const def = mode === 'challenge' ? CHALLENGES[challengeIdx] : null;
   challenge = def ? { def, idx: challengeIdx, elapsed: 0, garbageAccum: 0 } : null;
-  baseLevel = (def && def.startLevel) || 1;
+  baseLevel = def ? (def.startLevel || 1) : startLevel;
 
   board = createBoard();
   hidden = createHidden();
@@ -730,7 +766,9 @@ function init(modeName, idx) {
   updateHUD();
   updateStatus();
   overlay.classList.add('hidden');
+  pauseMenu.classList.add('hidden');
   menu.classList.add('hidden');
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -739,7 +777,9 @@ function init(modeName, idx) {
 function showMenu() {
   cancelAnimationFrame(animId);
   gameOver = true; // bloquea el input mientras el menú está abierto
+  paused = false;
   overlay.classList.add('hidden');
+  pauseMenu.classList.add('hidden');
   challengeList.classList.add('hidden');
   menuMain.classList.remove('hidden');
   menu.classList.remove('hidden');
@@ -777,14 +817,39 @@ document.getElementById('menu-challenge').addEventListener('click', () => {
 restartBtn.addEventListener('click', () => init(mode, challengeIdx));
 nextBtn.addEventListener('click', () => init('challenge', challengeIdx + 1));
 menuBtn.addEventListener('click', showMenu);
+pauseResumeBtn.addEventListener('click', resumeGame);
+document.getElementById('pause-restart').addEventListener('click', () => init(mode, challengeIdx));
+document.getElementById('pause-menu-btn').addEventListener('click', showMenu);
+document.getElementById('pause-controls-btn').addEventListener('click', () => {
+  showPauseView(true);
+  document.getElementById('pause-controls-back').focus();
+});
+document.getElementById('pause-controls-back').addEventListener('click', () => {
+  showPauseView(false);
+  document.getElementById('pause-controls-btn').focus();
+});
+startLevelDec.addEventListener('click', () => setStartLevel(startLevel - 1));
+startLevelInc.addEventListener('click', () => setStartLevel(startLevel + 1));
 buildChallengeList();
 
 document.addEventListener('pointerdown', ensureAudio);
 
+document.addEventListener('keyup', e => {
+  heldKeys.delete(e.code);
+  blockedKeys.delete(e.code);
+});
+window.addEventListener('blur', () => { heldKeys.clear(); blockedKeys.clear(); });
+
 document.addEventListener('keydown', e => {
   ensureAudio();
-  if (e.code === 'KeyP') { togglePause(); return; }
+  heldKeys.add(e.code);
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    if (!e.repeat) togglePause();
+    return;
+  }
+  // Con el menú de pausa abierto, el juego no recibe input (los botones siguen usando Tab/Enter/Space).
   if (paused || gameOver) return;
+  if (blockedKeys.has(e.code)) { e.preventDefault(); return; }
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) { current.x--; lastMoveWasRotate = false; }
@@ -851,6 +916,10 @@ setTheme(savedTheme);
 let savedMuted = false;
 try { savedMuted = localStorage.getItem('muted') === '1'; } catch (e) {}
 setMuted(savedMuted);
+
+let savedStartLevel = MIN_START_LEVEL;
+try { savedStartLevel = parseInt(localStorage.getItem('startLevel'), 10) || MIN_START_LEVEL; } catch (e) {}
+setStartLevel(savedStartLevel);
 
 // Arranca mostrando el menú: se prepara el estado para poder redibujar, pero sin correr el loop.
 init('classic');

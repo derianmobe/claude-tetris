@@ -273,6 +273,58 @@ kbd {
   opacity: 0.85;
 }
 
+/* ---- Menú de pausa ---- */
+.level-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step-btn {
+  padding: 4px 14px;
+  font-size: 18px;
+}
+
+.step-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.step-value {
+  min-width: 2ch;
+  text-align: center;
+}
+
+.controls-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.controls-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.controls-list li span {
+  display: inline-flex;
+  gap: 4px;
+  min-width: 72px;
+}
+
 /* ---- Panel: objetivo y estado ---- */
 .value-sm {
   font-size: 20px;
