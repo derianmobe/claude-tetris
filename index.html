@@ -65,6 +65,12 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+        <div id="record-entry" class="record-entry hidden">
+          <p id="record-msg" class="record-msg"></p>
+          <label class="record-label" for="record-name">Tu nombre</label>
+          <input id="record-name" class="record-name" type="text" maxlength="12" autocomplete="off" spellcheck="false" />
+        </div>
+        <div id="overlay-records" class="records hidden"></div>
         <button id="next-btn" class="btn hidden" type="button">Siguiente nivel</button>
         <button id="restart-btn" class="btn" type="button">Reiniciar</button>
         <button id="menu-btn" class="btn btn-secondary" type="button">Menú</button>
@@ -77,6 +83,8 @@
         <div id="menu-main" class="menu-group">
           <button id="menu-classic" class="btn" type="button">Clásico</button>
           <button id="menu-challenge" class="btn" type="button">Desafío</button>
+          <div id="menu-records" class="records"></div>
+          <button id="reset-records-btn" class="btn btn-secondary btn-sm" type="button">Borrar récords</button>
         </div>
         <div id="challenge-list" class="menu-group hidden"></div>
       </div>
