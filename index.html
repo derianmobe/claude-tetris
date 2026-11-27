@@ -55,7 +55,7 @@
             <li><kbd>↑</kbd> rotar</li>
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
-            <li><kbd>P</kbd> pausa</li>
+            <li><kbd>P</kbd>/<kbd>Esc</kbd> pausa</li>
           </ul>
         </div>
       </aside>
@@ -68,6 +68,29 @@
         <button id="next-btn" class="btn hidden" type="button">Siguiente nivel</button>
         <button id="restart-btn" class="btn" type="button">Reiniciar</button>
         <button id="menu-btn" class="btn btn-secondary" type="button">Menú</button>
+      </div>
+    </div>
+
+    <div id="pause-menu" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+      <div class="overlay-box">
+        <p id="pause-title" class="pause-title">PAUSA</p>
+        <div class="menu-group">
+          <button id="pause-resume" class="btn" type="button">Reanudar</button>
+          <button id="pause-restart" class="btn" type="button">Reiniciar</button>
+          <button id="pause-controls-btn" class="btn btn-secondary" type="button" aria-expanded="false" aria-controls="pause-controls">Ver controles</button>
+          <ul id="pause-controls" class="pause-controls hidden">
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd>/<kbd>X</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar (+1 por celda)</li>
+            <li><kbd>Space</kbd> caída instantánea (+2 por celda)</li>
+            <li><kbd>P</kbd>/<kbd>Esc</kbd> pausa / reanudar</li>
+          </ul>
+          <label class="start-level" for="start-level">
+            <span>Nivel inicial</span>
+            <select id="start-level"></select>
+          </label>
+          <small class="start-level-hint">Solo modo clásico: se aplica al reiniciar o en la próxima partida</small>
+        </div>
       </div>
     </div>
 
