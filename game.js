@@ -205,6 +205,15 @@ const MAX_RECORDS = 5;
 const NAME_MAX = 12;
 const skinSelect = document.getElementById('skin-select');
 
+const pauseMenu = document.getElementById('pause-menu');
+const pauseResumeBtn = document.getElementById('pause-resume');
+const pauseRestartBtn = document.getElementById('pause-restart');
+const pauseControlsBtn = document.getElementById('pause-controls-btn');
+const pauseControls = document.getElementById('pause-controls');
+const startLevelSelect = document.getElementById('start-level');
+
+const MAX_START_LEVEL = 15;
+
 let gridColor = '#22222e';
 let skin = SKINS.retro;
 
@@ -212,6 +221,8 @@ let board, hidden, current, next, score, lines, level, paused, gameOver, lastTim
 let baseLevel, combo, b2b, lastMoveWasRotate, pendingPower, freezeMs, effects, challenge, mode, challengeIdx;
 let maxCombo, pendingRecord;
 let muted = false;
+let startLevel = 1;          // nivel inicial elegido en el menú de pausa (modo clásico)
+let ignoreRepeats = false;   // tras reanudar, ignora auto-repetición de teclas mantenidas
 let audioCtx = null;
 
 function createBoard() {
@@ -911,15 +922,37 @@ function endGame() {
 
 function togglePause() {
   if (gameOver) return;
-  paused = !paused;
-  if (!paused) {
-    overlay.classList.add('hidden');
-    lastTime = performance.now();
-    loop(lastTime);
-  } else {
-    cancelAnimationFrame(animId);
-    showOverlay('PAUSA', '', false, false);
-  }
+  if (paused) resume(); else pause();
+}
+
+function pause() {
+  if (gameOver || paused) return;
+  paused = true;
+  cancelAnimationFrame(animId);
+  pauseControls.classList.add('hidden');
+  pauseControlsBtn.setAttribute('aria-expanded', 'false');
+  pauseControlsBtn.textContent = 'Ver controles';
+  startLevelSelect.value = String(startLevel);
+  pauseMenu.classList.remove('hidden');
+  pauseResumeBtn.focus();
+}
+
+function resume() {
+  if (!paused) return;
+  paused = false;
+  pauseMenu.classList.add('hidden');
+  if (document.activeElement) document.activeElement.blur(); // Space no debe re-activar botones
+  ignoreRepeats = true; // una tecla mantenida al cerrar el menú no mueve la pieza
+  dropAccum = 0;
+  lastTime = performance.now();
+  animId = requestAnimationFrame(loop);
+}
+
+function setStartLevel(value) {
+  const n = parseInt(value, 10);
+  startLevel = n >= 1 && n <= MAX_START_LEVEL ? n : 1;
+  startLevelSelect.value = String(startLevel);
+  try { localStorage.setItem('startLevel', String(startLevel)); } catch (e) {}
 }
 
 function loop(ts) {
@@ -956,7 +989,7 @@ function init(modeName, idx) {
   challengeIdx = idx || 0;
   const def = mode === 'challenge' ? CHALLENGES[challengeIdx] : null;
   challenge = def ? { def, idx: challengeIdx, elapsed: 0, garbageAccum: 0 } : null;
-  baseLevel = (def && def.startLevel) || 1;
+  baseLevel = def ? (def.startLevel || 1) : startLevel;
 
   board = createBoard();
   hidden = createHidden();
@@ -981,7 +1014,9 @@ function init(modeName, idx) {
   spawn();
   updateHUD();
   updateStatus();
+  ignoreRepeats = false;
   overlay.classList.add('hidden');
+  pauseMenu.classList.add('hidden');
   menu.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
@@ -1049,15 +1084,42 @@ resetRecordsBtn.addEventListener('click', () => {
   renderRecords(menuRecords, -1);
 });
 
+// ---- Menú de pausa ----
+for (let i = 1; i <= MAX_START_LEVEL; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  startLevelSelect.appendChild(opt);
+}
+pauseResumeBtn.addEventListener('click', resume);
+pauseRestartBtn.addEventListener('click', () => {
+  pauseRestartBtn.blur();
+  init(mode, challengeIdx);
+});
+pauseControlsBtn.addEventListener('click', () => {
+  const open = pauseControls.classList.toggle('hidden') === false;
+  pauseControlsBtn.setAttribute('aria-expanded', String(open));
+  pauseControlsBtn.textContent = open ? 'Ocultar controles' : 'Ver controles';
+});
+startLevelSelect.addEventListener('change', () => setStartLevel(startLevelSelect.value));
+
 document.addEventListener('pointerdown', ensureAudio);
 
 document.addEventListener('keydown', e => {
   // escribir en un campo de texto (nombre del récord) no debe mover piezas
   const tag = e.target && e.target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   ensureAudio();
-  if (e.code === 'KeyP') { togglePause(); return; }
+  // P/Esc deben cerrar la pausa aunque el foco esté en un selector (nivel inicial, skin)
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    if (!e.repeat) togglePause();
+    return;
+  }
+  if (tag === 'SELECT') return;
+  // con el menú de pausa abierto solo se navega por el menú (Tab/Enter/flechas en el selector)
   if (paused || gameOver) return;
+  if (e.repeat && ignoreRepeats) { if (e.code === 'Space') e.preventDefault(); return; }
+  ignoreRepeats = false;
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) { current.x--; lastMoveWasRotate = false; }
@@ -1165,6 +1227,10 @@ setMuted(savedMuted);
 let savedSkin = 'retro';
 try { savedSkin = localStorage.getItem('skin') || 'retro'; } catch (e) {}
 setSkin(savedSkin);
+
+let savedStartLevel = 1;
+try { savedStartLevel = localStorage.getItem('startLevel'); } catch (e) {}
+setStartLevel(savedStartLevel);
 
 // Arranca mostrando el menú: se prepara el estado para poder redibujar, pero sin correr el loop.
 init('classic');
