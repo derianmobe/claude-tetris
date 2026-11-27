@@ -317,3 +317,101 @@ kbd {
 #theme-toggle:hover {
   border-color: var(--accent);
 }
+
+/* ---- Récords ---- */
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 240px;
+  font-size: 12px;
+}
+
+.records-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--label);
+  font-weight: 600;
+}
+
+.records table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.records th {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--label);
+  text-align: right;
+  padding: 2px 4px;
+}
+
+.records td {
+  padding: 2px 4px;
+  text-align: right;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+}
+
+.records th:nth-child(2),
+.records td:nth-child(2) {
+  text-align: left;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.records tr.highlight td {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  font-weight: 700;
+}
+
+.records-empty,
+.records-stats {
+  color: var(--muted);
+}
+
+.records-new {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.save-score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.save-row {
+  display: flex;
+  gap: 6px;
+}
+
+#name-input {
+  width: 140px;
+  background: var(--board-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  user-select: text;
+}
+
+#name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
